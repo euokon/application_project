@@ -1,0 +1,146 @@
+﻿create table tmp_application_projects(project_id varchar2(100) not null,
+                                      project_name varchar2(100) not null,
+                                      project_start_date date not null,
+                                      expected_end_date date not null,
+                                      project_end_date date,
+                                      completion_status char(1) not null,
+                                      business_days number not null,
+                                      date_created date not null,
+                                      created_by varchar2(100) not null,
+                                      date_modified date,
+                                      modified_by varchar2(100),
+                                      record_status char(1) not null,
+                                      constraint project_pk primary
+                                      key(project_id));
+
+create or replace package body pkg_application_project is
+
+  procedure insert_application_projects(p_project_id         varchar2,
+                                        p_project_name       varchar2,
+                                        p_project_start_date date,
+                                        p_expected_end_date  date,
+                                        p_business_days      number,
+                                        p_created_by         varchar2) is
+  begin
+    insert into tmp_application_projects
+      (project_id,
+       project_name,
+       project_start_date,
+       expected_end_date,
+       completion_status,
+       business_days,
+       date_created,
+       created_by,
+       record_stat)
+    values
+      (p_project_id,
+       p_project_name,
+       p_project_start_date,
+       p_expected_end_date,
+       'O',
+       p_business_days,
+       sysdate,
+       p_created_by,
+       'O');
+    commit;
+  end;
+
+  procedure update_application_projects(p_project_id         varchar2,
+                                        p_project_name       varchar2,
+                                        p_project_start_date date,
+                                        p_expected_end_date  date,
+                                        p_project_end_date   date,
+                                        p_completion_status  char,
+                                        p_business_days      number,
+                                        p_modified_by        varchar2) is
+  begin
+    update tmp_application_projects
+       set project_name       = p_project_name,
+           project_start_date = p_project_start_date,
+           expected_end_date  = p_expected_end_date,
+           project_end_date   = p_project_end_date,
+           completion_status  = p_completion_status,
+           business_days      = p_business_days,
+           date_modified      = sysdate,
+           modified_by        = p_modified_by
+     where project_id = p_project_id;
+    commit;
+  end;
+
+  procedure delete_application_projects(p_project_id  varchar2,
+                                        p_modified_by varchar2) is
+  begin
+    update tmp_application_projects
+       set record_stat   = 'C',
+           date_modified = sysdate,
+           modified_by   = p_modified_by
+     where project_id = p_project_id;
+    commit;
+  end;
+
+  procedure get_application_projects(result_set out sys_refcursor) is
+  begin
+    open result_set for
+      select project_id,
+             project_name,
+             project_start_date,
+             expected_end_date,
+             project_end_date,
+             completion_status,
+             business_days,
+             date_created,
+             created_by,
+             date_modified,
+             modified_by,
+             record_stat
+        from tmp_application_projects
+       where record_stat = 'O';
+  end;
+
+  procedure get_application_project_by_id(p_project_id in varchar2,
+                                          result_set   out sys_refcursor) is
+  begin
+    open result_set for
+      select project_id,
+             project_name,
+             project_start_date,
+             expected_end_date,
+             project_end_date,
+             completion_status,
+             business_days,
+             date_created,
+             created_by,
+             date_modified,
+             modified_by,
+             record_stat
+        from tmp_application_projects
+       where record_stat = 'O'
+         and project_id = p_project_id;
+  end;
+
+end pkg_application_project;
+
+
+create or replace package pkg_application_project is
+
+  procedure insert_application_projects(p_project_id         varchar2,
+                                        p_project_name       varchar2,
+                                        p_project_start_date date,
+                                        p_expected_end_date  date,
+                                        p_business_days      number,
+                                        p_created_by         varchar2);
+  procedure update_application_projects(p_project_id         varchar2,
+                                        p_project_name       varchar2,
+                                        p_project_start_date date,
+                                        p_expected_end_date  date,
+                                        p_project_end_date   date,
+                                        p_completion_status  char,
+                                        p_business_days      number,
+                                        p_modified_by        varchar2);
+  procedure delete_application_projects(p_project_id  varchar2,
+                                        p_modified_by varchar2);
+  procedure get_application_projects(result_set out sys_refcursor);
+  procedure get_application_project_by_id(p_project_id in varchar2,
+                                          result_set   out sys_refcursor);
+
+end pkg_application_project;
